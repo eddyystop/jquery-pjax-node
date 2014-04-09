@@ -10,8 +10,7 @@ var PJAX = {
     console.log('=> original url=', req.originalUrl);
     console.log('=> req.query=', req.query);
     console.log('=> req.body=', req.body);
-    console.log('=> req is ' +
-      (req.session.X_PJAX || req.header('X-PJAX') ? '' : 'not ') +
+    console.log('=> req is ' + (req.header('X-PJAX') ? '' : 'not ') +
       'a PJAX request');
   },
 
@@ -33,7 +32,7 @@ var PJAX = {
   // log controller redirecting
   logRedirectInfo: function (url, req) {
     console.log('\n\n<= redirecting to=', url);
-    console.log('<= this will ' + (req.session.X_PJAX ? '' : 'not ') +
+    console.log('<= this will ' + (req.header('X-PJAX') ? '' : 'not ') +
       'be a PJAX request');
   },
 
@@ -221,18 +220,22 @@ var PJAX = {
   },
 
   /**
-   * Coerce an object's property to be an array.
+   * Coerce an object's properties to be arrays.
    * @param {object} obj. obj[prop] may be MODIFIED BY THIS CALL
-   * @param {string} prop is the property in obj
+   * @param {string} arguments are the properties in obj
    */
 
-  coercePropToArray: function getObjProp (obj, prop) {
-    var value = obj[prop];
+  coercePropsToArray: function getObjProp (obj /* args */) {
 
-    if (typeof value === 'undefined') {
-      obj[prop] = [];
-    } else if (Object.prototype.toString.call(value) !== '[object Array]') {
-      obj[prop] = [value];
+    for (var i = 1, len = arguments.length; i < len; i += 1) {
+      var prop = arguments[i],
+        value = obj[prop];
+
+      if (typeof value === 'undefined') {
+        obj[prop] = [];
+      } else if (Object.prototype.toString.call(value) !== '[object Array]') {
+        obj[prop] = [value];
+      }
     }
   }
 };

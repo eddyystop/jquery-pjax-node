@@ -1,12 +1,12 @@
 {
-  "name": "hackathon-starter",
-  "version": "0.0.0",
+  "name": "jquery-pjax-node",
+  "version": "0.1.2",
   "repository": {
     "type": "git",
-    "url": "https://github.com/sahat/hackathon-starter.git"
+    "url": "https://github.com/eddyystop/jquery-pjax-node.git"
   },
   "scripts": {
-    "start": "node app.js",
+    "start": "node appEx1.js",
     "test": "mocha"
   },
   "dependencies": {

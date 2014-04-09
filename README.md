@@ -1,8 +1,9 @@
 # [jquery-pjax-node] (https://github.com/eddyystop/jquery-pjax-node)
 
-A micro framework and boilerplate for a Node.js server handling PJAX requests.
+A micro framework, toolkit and boilerplate for a Node.js server
+handling PJAX requests.
 
-Several runnable, increasingly complex mini-apps will guide you through using
+Several runnable, increasingly complex mini-apps use
 [jquery-pjax] (https://github.com/defunkt/jquery-pjax)
 and
 [jquery-pjax-toolkit] (https://github.com/eddyystop/jquery-pjax-toolkit)
@@ -13,10 +14,10 @@ and
 on the server.
 
 Mini-app walk throughs:
-- [A robust PJAX server] (#mini-app-1)
+- [A basic but robust PJAX server] (#mini-app-1)
 
 ## Why use PJAX?
-**Exhibit 1** Github [likes and uses it]
+**Exhibit 1 --** Github [likes and uses it]
 (https://github.com/blog/831-issues-2-0-the-next-generation).
 
 ```
@@ -29,18 +30,18 @@ This is thanks to PJAX — something we've been using more and more
 throughout the site.
 ```
 
-**Exhibit 2** [Basecamp] (http://basecamp.com) has helped over 285,000 companies
+**Exhibit 2 --** [Basecamp] (http://basecamp.com) has helped over 285,000 companies
 finish over 2,000,000 projects with a ["damn fast"]
 (http://signalvnoise.com/posts/3112-how-basecamp-next-got-to-be-so-damn-fast-without-using-much-client-side-ui)
 project management service based on PJAX.
 
 ## How to install
 ```sh
-clone or download a zip file from https://github.com/eddyystop/jquery-pjax-node.
+git clone git://github.com/eddyystop/jquery-pjax-node.git
 ```
 
 ## Technology stack
-The mini-apps use the following technology stack:
+The mini-apps use:
 - [jquery-pjax] (https://github.com/defunkt/jquery-pjax)
 provides the basic PJAX foundation on the client.
 - [jquery-pjax-toolkit] (https://github.com/eddyystop/jquery-pjax-toolkit)
@@ -53,23 +54,23 @@ for Node.
 provides a good boilerplate for a Node+Express server.
 It provides proven basic features
 and comes with oAuth 2.0 Authentication for a wide number of services.
-- This repo provides a mini-framework for Node which makes it easy to serve
-PJAX requests from jquery-pjax and jquery-pjax-toolkit.
+- This repo provides a mini-framework for Express which makes it easy to serve
+PJAX requests coming from jquery-pjax and jquery-pjax-toolkit.
 - [ejs] (https://github.com/visionmedia/ejs) is the template engine used.
 Changing to another template engine is straight forward.
 
 We have made some changes to hackathon-starter to focus the mini-apps on PJAX:
 - We have removed all authentication.
 - We have removed csrf checking
-so the simplest mini-app is easier to understand.
-- We have removed MongoDB as we don't use a DB.
+for the simplest mini-app.
+- We have removed MongoDB as we don't need a DB for the mini-apps.
 - We have changed the render engine from jade to ejs.
 - We use Foundation 5 and Abide rather than Bootstrap,
 so we can illustrate simple client side validation in the simplest mini-app.
 
 Please read about the
 [prerequisites] (https://github.com/sahat/hackathon-starter/blob/master/README.md#prerequisites).
-Note we don't use MongoDB.
+(Note we don't use MongoDB.)
 
 ## Starting the server
 You can start the server with:
@@ -81,46 +82,37 @@ cd path/to/jquery-pjax-node
 npm install
 
 # start server
-node app.js
-
-# a message on the node console will say its listening to port 3000.
+node appEx1.js  (for mini-app 1)
+or
+node appEx1.js  (for mini-app #2) --- coming soon
 ```
+A message on the Node console will say its listening to port 3000.
 You can start the mini-apps by pointing the browser to:
 ```
 localhost:3000/ex1
 or
-localhost:3000/ex2 (available soon)
+localhost:3000/ex2 --- coming soon
 ```
+Every server and frontend controller logs sufficient information to console.log
+for you to follow what is happening.
 
 
 ***
 
 
-### <a name="mini-app-1"></a>Mini-app #1 (/ex1)
+### <a name="mini-app-1"></a>A basic but robust PJAX server (/ex1)
 
-Walk through coming soon.
+Coming soon.
 
+## Changelog
 
-### jquery-pjax
-IMHO opinion MV* and SPA designs are overkill for the majority of web sites,
-as well as for the minimum viable product implementation of many startup ideas.
+### 0.1.2
+- Node: Start mini-apps with `node appEx1.js`.
+This allows them to use different Express configurations.
+- Node: Removed req.sesion.pjax. The X-PJAX header id passed on a redirect.
+- Node: PJAX.coercePropsToArray replaces PJAX.coercePropToArray.
 
-[jquery-pjax] (https://github.com/defunkt/jquery-pjax),
-used in portions of github.com, supports a very simple,
-viable design with a great performance profile if:
- - Displayed data does not have to change in real time e.g. no push is needed.
- - You do not display **lots** of data
- of which only small amounts change at any time, e.g. calendars.
-
-[This article] (http://signalvnoise.com/posts/3112-how-basecamp-next-got-to-be-so-damn-fast-without-using-much-client-side-ui)
-describes how [Basecamp] (http://basecamp.com),
-a web application with high load and fast performance requirements,
-uses a PJAX design (though not jquery-pjax) to achieve its goals.
-
-jquery-pjax-toolkit's aim is to provide much of the client side tools needed
-to achieve similar benefits for our projects.
-
-### License
+## License
 Copyright (c) 2014 Sahat Yalkabov
 Distributed under the MIT license. See LICENSE.md for details.
 

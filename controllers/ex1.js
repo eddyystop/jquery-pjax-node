@@ -40,7 +40,6 @@ module.exports = {
     // Read comments in property 'club' before trying to understand 'index'.
     PJAX.logReqInfo('/ex1/index', req);
 
-    req.session.X_PJAX = null;
     res.locals.htmlToLoad = '/ex1/club' + PJAX.getQueryString(req);
 
     PJAX.logResInfo('ex1/htmlFramework', null, res);
@@ -59,17 +58,7 @@ module.exports = {
     res.locals.regions = regions;
     res.locals.clubs = clubs;
 
-    // * A route directly called by a client jquery-pjax request will have a
-    // X-PJAX header.
-    // * The route may be for a PJAX POST request. If the POST data is
-    // validated correctly, the route is likely to res.redirect(..) to
-    // another route to render a response. That redirected-to route will not
-    // have a X-PJAX header. todo (Ooops, it may have the header. Check)
-    // * We req.session.X_PJAX = true before redirection, so the
-    // redirected-to route knows the original client request was PJAX.
-    req.session.X_PJAX = req.session.X_PJAX || req.header('X-PJAX');
-
-    if (req.session.X_PJAX) {
+    if (req.header('X-PJAX')) {
       // PJAX REQUEST FOR A HTML FRAGMENT
 
       // * Inserting HTML into the DOM is not the only thing jquery-pjax does.
@@ -84,9 +73,6 @@ module.exports = {
       var clientUrl =  PJAX.getUrlExpress(req, res, '/ex1/club', ['region', 'club']);
       res.setHeader('X-PJAX-URL', clientUrl);
 
-      // We are not redirecting
-      req.session.X_PJAX = null;
-
       // render the PJAX HTML
       PJAX.logResInfo('ex1/club', clientUrl, res);
       res.render('ex1/club', {layout: false});
@@ -98,7 +84,6 @@ module.exports = {
       // Redirecting with res.redirect('/ex1') would accomplish the same thing.
       // * We could instead have rendered a complete page, including the html
       // framework and PJAX fragment. This would result in a single round trip.
-      req.session.X_PJAX = null;
       res.locals.htmlToLoad = '/ex1/club' + PJAX.getQueryString(req);
 
       PJAX.logResInfo('ex1/htmlFramework', null, res);
@@ -114,12 +99,10 @@ module.exports = {
     // req.body (not req.query) but its annoying.
     // Here, we coerce such values to arrays if they exist, and to [] if
     // they don't. Thereafter our code can assume they are always arrays.
-    PJAX.coercePropToArray(req.body, 'club');
-    PJAX.coercePropToArray(req.body, 'animal');
+    PJAX.coercePropsToArray(req.body, 'club', 'animal');
 
     PJAX.logReqInfo('/ex1/clubPost', req);
     PJAX.extractDetectedClientFeatures(req, null);
-    req.session.X_PJAX = req.session.X_PJAX || req.header('X-PJAX');
 
     req.session.region = req.body.region;
     req.session.club = req.body.club;
@@ -132,23 +115,20 @@ module.exports = {
   team: function (req, res) {
     PJAX.logReqInfo('/ex1/team', req);
     PJAX.extractDetectedClientFeatures(req, null);
-    req.session.X_PJAX = req.session.X_PJAX || req.header('X-PJAX');
 
     res.locals.regionName = _findName(regions, req.session.region);
     res.locals.clubName = _findName(clubs[req.session.region] || [], req.session.club);
 
-    if (req.session.X_PJAX) {
+    if (req.header('X-PJAX')) {
 
       var clientUrl = PJAX.getUrlExpress(req, res, '/ex1/team', ['region', 'club', 'teams']);
       res.setHeader('X-PJAX-URL', clientUrl);
 
-      req.session.X_PJAX = null;
       PJAX.logResInfo('ex1/team', clientUrl, res);
       res.render('ex1/team', {layout: false});
 
     } else {
 
-      req.session.X_PJAX = null;
       res.locals.htmlToLoad = '/ex1/team' + PJAX.getQueryString(req);
 
       PJAX.logResInfo('ex1/htmlFramework', null, res);
@@ -158,11 +138,10 @@ module.exports = {
 
 
   teamPost: function (req, res) {
-    PJAX.coercePropToArray(req.body, 'teams');
+    PJAX.coercePropsToArray(req.body, 'teams');
 
     PJAX.logReqInfo('/ex1/teamPost', req);
     PJAX.extractDetectedClientFeatures(req, null);
-    req.session.X_PJAX = req.session.X_PJAX || req.header('X-PJAX');
 
     req.session.teams = req.body.teams;
 
@@ -174,7 +153,6 @@ module.exports = {
   schedule: function (req, res) {
     PJAX.logReqInfo('/ex1/schedule', req);
     PJAX.extractDetectedClientFeatures(req, null);
-    req.session.X_PJAX = req.session.X_PJAX || req.header('X-PJAX');
 
     res.locals.regionName = _findName(regions, req.session.region);
     res.locals.clubName = _findName(clubs[req.session.region] || [], req.session.club);
@@ -183,18 +161,16 @@ module.exports = {
     res.locals.teamsNames = typeof teams === 'string' ? teams :
       req.session.teams.join(', ');
 
-    if (req.session.X_PJAX) {
+    if (req.header('X-PJAX')) {
 
       var clientUrl = PJAX.getUrlExpress(req, res, '/ex1/schedule', ['region', 'club', 'teams']);
       res.setHeader('X-PJAX-URL', clientUrl);
 
-      req.session.X_PJAX = null;
       PJAX.logResInfo('ex1/schedule', clientUrl, res);
       res.render('ex1/schedule', {layout: false});
 
     } else {
 
-      req.session.X_PJAX = null;
       res.locals.htmlToLoad = '/ex1/schedule' + PJAX.getQueryString(req);
 
       PJAX.logResInfo('ex1/htmlFramework', null, res);
@@ -205,20 +181,17 @@ module.exports = {
   screen1: function (req, res) {
     PJAX.logReqInfo('/ex1/screen1', req);
     PJAX.extractDetectedClientFeatures(req, null);
-    req.session.X_PJAX = req.session.X_PJAX || req.header('X-PJAX');
 
-    if (req.session.X_PJAX) {
+    if (req.header('X-PJAX')) {
 
       var clientUrl = '/ex1/screen1';
       res.setHeader('X-PJAX-URL', clientUrl);
 
-      req.session.X_PJAX = null;
       PJAX.logResInfo('ex1/screen1', clientUrl, res);
       res.render('ex1/screen1', {layout: false});
 
     } else {
 
-      req.session.X_PJAX = null;
       res.locals.htmlToLoad = '/ex1/screen1' + PJAX.getQueryString(req);
 
       PJAX.logResInfo('ex1/htmlFramework', null, res);
