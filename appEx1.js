@@ -62,22 +62,22 @@ app.use(express.session({
   secret: secrets.sessionSecret,
   cookie: { maxAge: 60000 }
   /* we're not using any DB
-  store: new MongoStore({
-    url: secrets.db,
-    auto_reconnect: true
-  })
-  */
+   store: new MongoStore({
+   url: secrets.db,
+   auto_reconnect: true
+   })
+   */
 }));
 
 /* we are not using csrf so as not to complicate /ex1
-app.use(express.csrf());
-app.use(function(req, res, next) {
-  res.locals.user = req.user;
-  res.locals._csrf = req.csrfToken();
-  res.locals.secrets = secrets;
-  next();
-});
-*/
+ app.use(express.csrf());
+ app.use(function(req, res, next) {
+ res.locals.user = req.user;
+ res.locals._csrf = req.csrfToken();
+ res.locals.secrets = secrets;
+ next();
+ });
+ */
 app.use(flash());
 app.use(express.static(path.join(__dirname, 'public'), { maxAge: month }));
 app.use(function(req, res, next) {

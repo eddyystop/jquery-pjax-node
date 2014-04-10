@@ -109,7 +109,7 @@ Coming soon.
 ### 0.1.2
 - Node: Start mini-apps with `node appEx1.js`.
 This allows them to use different Express configurations.
-- Node: Removed req.sesion.pjax. The X-PJAX header id passed on a redirect.
+- Node: Removed req.sesion.pjax. The X-PJAX header is passed on a redirect.
 - Node: PJAX.coercePropsToArray replaces PJAX.coercePropToArray.
 
 ## License
