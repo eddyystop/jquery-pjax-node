@@ -1,6 +1,8 @@
 'use strict';
 
-var PJAX = require('../services/PjaxEx2');
+var PJAX = require('../services/PjaxEx2'),
+  validator = require('../services/validation');
+
 PJAX.qs.options = { array: 'x', obj: '[]' }; // query string format for Express
 
 // CONSTANTS. These would likely be read from a DB in practice.
@@ -48,20 +50,84 @@ module.exports = {
 
   club: function (req, res) {
     PJAX.logReqInfo('/ex2/club', req);
+    var err = false,
+      clientUrl; // declaring here avoids hint msgs
 
     // Extract any detected client features into req.session_widths & _features.
     PJAX.extractDetectedClientFeatures(req, null);
 
-    var region = res.locals.region = req.query.region || '';
-    var club = res.locals.club = req.query.club || '';
+    // get state. Its usually in req.query on GET, req.body on POST
+    var state = {
+      region: req.param('region') || '',
+      input: req.param('input') || '',
+      sex: req.param('sex') || '',
+
+      // Arrays are not assigned default values
+      club: req.param('club'),
+      animal: req.param('animal')
+    };
+
+    // Coerce into arrays values that should be arrays,
+    // e.g. <select multiple> or checkbox group returns a string when one value
+    // is selected, and an array when more than one. We make them arrays always.
+    PJAX.coercePropsToArray(state, 'club', 'animal');
+
+    /**
+     * handle POST =============================================================
+     * Many comments after this 'if' are applicable here.
+     */
+
+    if (req.route.method === 'post') {
+      console.log('\n<> POST validation. state=\n', state);
+
+      // validate data
+      err = validator.getMessagesFromServerModelValidation(state,
+        'ex2/club', req, {});
+
+      // handle valid form data ------------------------------------------------
+      if (!err) {
+        console.log('POST data is correct');
+
+        clientUrl = PJAX.getUrlFromState('/ex2/team', {
+          region: state.region,
+          club: state.club
+        });
+
+        PJAX.logRedirectInfo(clientUrl, req);
+        res.redirect(clientUrl);
+        return;
+      }
+    }
+
+    /**
+     * handle GET or errors ====================================================
+     */
+
+    // * One common design for displaying server msgs is in a 'box' at the top
+    // of the page. err.messages is an array suitable for this.
+    // * Another design would display server msgs below the relevant DOM
+    // tag. err.details[fieldName].message is suitable for this.
+    // * The template may also use express-flash, although this micro-framework
+    // does not make use it.
+    res.locals.msgs = err ? err.messages : [];
+    res.locals.fieldMsgs = err ? err.details : {};
+
+    // template helper fcns
+    extend(res.locals, PJAX.template);
+
+    // pass state to template
+    extend(res.locals, state);
 
     res.locals.regions = regions;
     res.locals.clubs = clubs;
 
-    res.locals.myCsrf = res.locals._csrf;
-
     if (req.header('X-PJAX')) {
       // PJAX REQUEST FOR A HTML FRAGMENT
+
+      // Pass frontend validation to template as .validations[fieldName]
+      // .attrs = tag attributes e.g. pattern="^[a-zA-Z0-9]{3,15}$" required
+      // .msg = error message e.g. '3 to 15 letters or numbers required.'
+      res.locals.validations = validator.getClientModelValidation('ex2/club', null);
 
       // * Inserting HTML into the DOM is not the only thing jquery-pjax does.
       // * Users want to be able to save bookmarks and they expect to see a properly
@@ -72,7 +138,7 @@ module.exports = {
       // FYI, such a request would not have a X-PJAX header.
       // * jquery-pjax will set the client's window.location.search to the URL
       // provided by the server after inserting a PJAX request HTML.
-      var clientUrl =  PJAX.getUrlExpress(req, res, '/ex2/club', ['region', 'club', 'myCsrf']);
+      clientUrl =  PJAX.getUrlFromState('/ex2/club',state);
       res.setHeader('X-PJAX-URL', clientUrl);
 
       // render the PJAX HTML
@@ -93,47 +159,69 @@ module.exports = {
     }
   },
 
-  clubPost: function (req, res) {
-
-    // jQuery returns a string if one choice is selected for
-    // <select multiple> and <input type="checkbox"> tags, and it returns an
-    // array if multiple choices are selected. We will only see this in
-    // req.body (not req.query) but its annoying.
-    // Here, we coerce such values to arrays if they exist, and to [] if
-    // they don't. Thereafter our code can assume they are always arrays.
-    console.log('///////////////////////// clubPost ///////////////////////');
-    PJAX.coercePropsToArray(req.body, 'club', 'animal');
-
-    PJAX.logReqInfo('/ex2/clubPost', req);
-    PJAX.extractDetectedClientFeatures(req, null);
-
-    req.session.region = req.body.region;
-    req.session.club = req.body.club;
-
-    var clientUrl = PJAX.getUrlExpress(req, res, '/ex2/team', ['region', 'club']);
-    PJAX.logRedirectInfo(clientUrl, req);
-    res.redirect(clientUrl);
-  },
-
   team: function (req, res) {
     PJAX.logReqInfo('/ex2/team', req);
+    var err = false, clientUrl;
+
     PJAX.extractDetectedClientFeatures(req, null);
 
-    res.locals.regionName = _findName(regions, req.session.region);
-    res.locals.clubName = _findName(clubs[req.session.region] || [], req.session.club);
+    var state = {
+      region: req.param('region') || '',
+      club: req.param('club'),
+      teams: req.param('teams')
+    };
+    PJAX.coercePropsToArray(state, 'club', 'teams');
 
-    res.locals.myCsrf = res.locals._csrf;
+    /**
+     * handle POST =============================================================
+     */
+
+    if (req.route.method === 'post') {
+      console.log('\n<> POST validation. state=\n', state);
+
+      err = validator.getMessagesFromServerModelValidation(state,
+        'ex2/team', req, {});
+
+      // handle valid form data ------------------------------------------------
+      if (!err) {
+        console.log('POST data is correct');
+        clientUrl = PJAX.getUrlFromState('/ex2/schedule', state);
+
+        PJAX.logRedirectInfo(clientUrl, req);
+        res.redirect(clientUrl);
+        return;
+      }
+    }
+
+    /**
+     * handle GET or errors ====================================================
+     */
+
+    var clubsInRegion = clubs[state.region] || [],
+      str = '';
+    state.club.forEach(function (club) {
+      var name = _findName(clubsInRegion || [], club);
+      if (name) { str += (str ? ', ' : '') + name; }
+    });
+
+    res.locals.regionName = _findName(regions, state.region);
+    res.locals.clubName = str;
+
+    res.locals.msgs = err ? err.messages : [];
+    res.locals.fieldMsgs = err ? err.details : {};
+    extend(res.locals, PJAX.template);
+    extend(res.locals, state);
 
     if (req.header('X-PJAX')) {
+      res.locals.validations = validator.getClientModelValidation('ex2/team', null);
 
-      var clientUrl = PJAX.getUrlExpress(req, res, '/ex2/team', ['region', 'club', 'teams','myCsrf']);
+      clientUrl =  PJAX.getUrlFromState('/ex2/team',state);
       res.setHeader('X-PJAX-URL', clientUrl);
 
       PJAX.logResInfo('ex2/team', clientUrl, res);
       res.render('ex2/team', {layout: false});
 
     } else {
-
       res.locals.htmlToLoad = '/ex2/team' + PJAX.getQueryString(req);
 
       PJAX.logResInfo('ex2/htmlFramework', null, res);
@@ -141,19 +229,54 @@ module.exports = {
     }
   },
 
+  schedule2: function (req, res) {
+    PJAX.logReqInfo('/ex2/team', req);
+    var err = false, clientUrl;
 
-  teamPost: function (req, res) {
-    console.log('///////////////////////// teamPost ///////////////////////');
-    PJAX.coercePropsToArray(req.body, 'teams');
-
-    PJAX.logReqInfo('/ex2/teamPost', req);
     PJAX.extractDetectedClientFeatures(req, null);
 
-    req.session.teams = req.body.teams;
+    var state = {
+      region: req.param('region') || '',
+      club: req.param('club'),
+      teams: req.param('teams')
+    };
+    PJAX.coercePropsToArray(state, 'club', 'teams');
 
-    var clientUrl = PJAX.getUrlExpress(req, res, '/ex2/schedule', ['region', 'club', 'teams']);
-    PJAX.logRedirectInfo(clientUrl, req);
-    res.redirect(clientUrl)
+    /**
+     * handle GET or errors ====================================================
+     */
+
+    var clubsInRegion = clubs[state.region] || [],
+      str = '';
+    state.club.forEach(function (club) {
+      var name = _findName(clubsInRegion || [], club);
+      if (name) { str += (str ? ', ' : '') + name; }
+    });
+
+    res.locals.regionName = _findName(regions, state.region);
+    res.locals.clubName = str;
+    res.locals.teamsNames = state.teams.join(', ');
+
+    res.locals.msgs = err ? err.messages : [];
+    res.locals.fieldMsgs = err ? err.details : {};
+    extend(res.locals, PJAX.template);
+    extend(res.locals, state);
+
+    if (req.header('X-PJAX')) {
+      res.locals.validations = validator.getClientModelValidation('ex2/schedule', null);
+
+      clientUrl =  PJAX.getUrlFromState('/ex2/schedule',state);
+      res.setHeader('X-PJAX-URL', clientUrl);
+
+      PJAX.logResInfo('ex2/schedule', clientUrl, res);
+      res.render('ex2/schedule', {layout: false});
+
+    } else {
+      res.locals.htmlToLoad = '/ex2/schedule' + PJAX.getQueryString(req);
+
+      PJAX.logResInfo('ex2/htmlFramework', null, res);
+      res.render('ex2/htmlFramework', {layout: false});
+    }
   },
 
   schedule: function (req, res) {
@@ -214,3 +337,17 @@ function _findName (list, key) {
   }
   return '';
 }
+
+function extend (a, b) {
+  for (var x in b) {
+    if (b.hasOwnProperty(x)) { // suppress hint msg, not really needed
+      a[x] = b[x];
+    }
+  }
+}
+
+// todo implement i18n in validation.js.
+// todo cache rendered templates on server.
+// - cache keyed by state URL+qs sent client
+// - put _doNotCache=true& in qs if any msgs. so we don't cache ones with msgs.
+// - tricky part: params when to invalidate cache on DB change.

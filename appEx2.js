@@ -68,36 +68,63 @@ app.use(express.session({
   */
 }));
 
-
-
-// http://stackoverflow.com/questions/13516898/disable-csrf-validation-for-some-requests-on-express
-// http://stackoverflow.com/questions/21645504/why-does-express-connect-generate-new-csrf-token-on-each-request
-// http://stackoverflow.com/questions/19505681/how-to-implement-csrf-protection-for-get-requests-in-express
-// This doesn't check for a valid csrf token if method === GET || HEAD || OPTION
-app.use(function(req, res, next) {
-  if (req.method !=='GET' && req.method !== 'HEAD' && req.method !== 'OPTION') {
-    console.log('/////////////////////////  req.url=', req.url);
-    console.log('req.body._csrf=', req.body._csrf,
-      'res.session.currentCsrf=', res.session ? res.session.currentCsrf : '*undefined');
-  }
+var COUNT = 0; // global
+app.use(function (req, res, next) {
+  console.log('\n////////// request# ', ++COUNT , ' method=', req.method,
+    'url=', req.url);
   next();
 });
-app.use(express.csrf());
 
-// Tis generates a new csrf token for every non-static request
+if (secrets.useCrsfProtection) {
+  // ENABLE CSRF PROTECTION
 
-var COUNT = 0;
-app.use(function(req, res, next) {
-  res.locals.user = req.user;
-  res.locals._csrf = req.csrfToken();
-  res.locals.secrets = secrets;
-  console.log('//////// COUNT=', COUNT++, 'reg.method=', req.method, 'req.body=', req.body);
-  console.log('++++ gen new csrf. user=', req.user, '_csrf=', res.locals._csrf, 'secrets=', secrets);
-  if (req.session) req.session.currentCsrf = res.locals._csrf;
-  next();
-});
-// end of code =================================================================
+  // Some info on CSRF in Express:
+  // http://stackoverflow.com/questions/13516898/disable-csrf-validation-for-some-requests-on-express
+  // http://stackoverflow.com/questions/21645504/why-does-express-connect-generate-new-csrf-token-on-each-request
+  // http://stackoverflow.com/questions/19505681/how-to-implement-csrf-protection-for-get-requests-in-express
+  app.use(function (req, res, next) {
+    var currCsrf = (req.body && req.body._csrf)
+      || (req.query && req.query._csrf)
+      || (req.headers['x-csrf-token'])
+      || (req.headers['x-xsrf-token']);
+    //console.log('last csrf token issued =', req.session && req.session.lastCsrf);
+    //console.log('csrf token this request=', currCsrf);
+    next();
+  });
 
+  // This doesn't check for a valid token if method === GET || HEAD || OPTION.
+  // It doesn't check for equality of tokens, in part because the Back button
+  // would be problematic.
+  // It extracts the 'seed' of the req token and recreates what token it would
+  // have issued for that seed (using the site's "secret"). The req token must
+  // equal the recreated one. This allows the user to click Back multiple times
+  // and reissue a request. Nice.
+  app.use(express.csrf());
+
+  // Generate a new csrf token for every request and make it available for
+  // the template.
+  app.use(function(req, res, next) {
+    res.locals.user = req.user;
+    res.locals._csrf = req.csrfToken();
+    res.locals.secrets = secrets;
+    next();
+  });
+
+  app.use(function(req, res, next) {
+    if (req.session) { req.session.lastCsrf = res.locals._csrf; }
+    //console.log('new csrf token created =', res.locals._csrf);
+    next();
+  });
+} else {
+
+  // PREVENT THINGS DESIGNED FOR CSRF PROTECTION FROM FAILING WHEN ITS OFF
+  app.use(function(req, res, next) {
+    res.locals.user = '';
+    res.locals._csrf = '';
+    res.locals.secrets = {};
+    next();
+  });
+}
 
 app.use(flash());
 app.use(express.static(path.join(__dirname, 'public'), { maxAge: month }));
@@ -126,12 +153,17 @@ app.get ('/', ex2Controller.index);
 
 app.get ('/ex2', ex2Controller.index);
 app.get ('/ex2/club', ex2Controller.club);
-app.post('/ex2/club', ex2Controller.clubPost);
+app.post('/ex2/club', ex2Controller.club);
 app.get ('/ex2/team', ex2Controller.team);
-app.post('/ex2/team', ex2Controller.teamPost);
-app.get ('/ex2/schedule', ex2Controller.schedule);
+app.post('/ex2/team', ex2Controller.team);
+app.get ('/ex2/schedule', ex2Controller.schedule2);
 app.get ('/ex2/screen1', ex2Controller.screen1);
 
+/**
+ * Parse form validations
+ */
+
+require('./services/validation');
 
 /**
  * Start Express server.

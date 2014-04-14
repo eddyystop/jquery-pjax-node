@@ -1,42 +1,65 @@
-<div class="row">
-    <div class="large-3 columns">
-        <label>Region</label>
-        <label><%= regionName %></label>
-        <br />
-        <label>Club</label>
-        <label><%= clubName %></label>
-    </div>
-    <div class="large-9 columns"></div>
-</div>
-
-<hr />
-
 <div id="teamWrapper">
+
+    <div class="row">
+
+        <!-- server messages -->
+        <% if (msgs) { %>
+        <ul class="alert alert-success">
+            <% msgs.forEach(function(msg) { %>
+            <li><%- msg %></li>
+            <% }) %>
+        </ul>
+        <% } %>
+
+        <!-- heading -->
+        <div class="large-3 columns">
+            <label>Region</label>
+            <label><%= regionName || '' %></label>
+            <br />
+            <label>Club</label>
+            <label><%= clubName || '' %></label>
+        </div>
+        <div class="large-9 columns"></div>
+    </div>
+
+    <!-- the form -->
     <form id="ex2_teamForm" pjax-route="ex2_team_post" method="POST" data-abide="ajax">
         <input type="hidden" name="_csrf" value="<%= _csrf %>">
 
         <div class="row">
             <div class="large-6 columns">
                 <div class="panel">
-                    <label>Choose the teams you want:</label>
-                    <select name="teams" multiple size="5" required>
-                        <option value="u16fd1">u16fd1</option>
-                        <option value="u16md1">u16md1</option>
-                        <option value="u14fd1">u14fd1</option>
-                        <option value="u14md1">u14md1</option>
-                    </select>
-                    <small class="error">You must select one or more teams.</small>
+
+                    <!-- TEAMS -->
+                    <label for="teams">Choose the teams you want:
+                        <% _v = validations.region || {} %>
+                        <select name="teams" multiple size="5" <%- _v.attrs || '' %>>
+                            <option value="u16fd1"
+                                    <%= _getSelected(teams, 'u16fd1') %>>u16fd1</option>
+                            <option value="u16md1"
+                                    <%= _getSelected(teams, 'u16md1') %>>u16md1</option>
+                            <option value="u14fd1"
+                                    <%= _getSelected(teams, 'u14fd1') %>>u14fd1</option>
+                            <option value="u14md1"
+                                    <%= _getSelected(teams, 'u14md1') %>>u14md1</option>
+                        </select>
+                        <% if (_v.msg) {%><small class="error"><%= _v.msg %></small><% } %>
+                    </label>
+
                 </div>
             </div>
             <div class="large-6"></div>
         </div>
 
         <hr/>
+
+        <!-- form buttons -->
         <input id="_button" name="_button" type="hidden">
         <button id="submitButton" type="submit">Submit</button>
     </form>
 </div>
 
+<!-- example of a responsive table -->
 <br/>
 <h3>This is a responsive table:</h3>
 <table class="responsive">
@@ -94,6 +117,7 @@
     </tbody>
 </table>
 
+<!-- example of a responsive image -->
 <br/>
 <h3>This is a responsive image:</h3>
 <span data-picture data-alt="A giant stone face at The Bayon temple in Angkor Thom, Cambodia">

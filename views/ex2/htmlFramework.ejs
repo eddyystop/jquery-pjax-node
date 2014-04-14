@@ -6,8 +6,21 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Soccer Practies</title>
-    <link rel="stylesheet" href="/css/normalize_and_foundation.css">
+    <link rel="stylesheet" href="/css/normalize.css">
+    <link rel="stylesheet" href="/css/foundation.css">
     <link rel="stylesheet" href="/css/pjax-responsive-tables.css">
+    <style>
+        /* Abide 5.2.2 code flow is different for radio buttons, check boxes,
+        custom validators and normal inputs with pattern/type attributes.
+        This causes some inconsistencies. */
+        /* For a group of radio buttons */
+        [data-abide-toolkit-group] label:not(:last-child) > .error {display:none !important;}
+        /* foundation 5.2.2 overwrites height for <select size="5"> */
+        select[size="2"] { height: 4em !important; }
+        select[size="3"] { height: 5.5em !important; }
+        select[size="4"] { height: 7em !important; }
+        select[size="5"] { height: 8.5em !important; }
+    </style>
 </head>
 <body>
 <div id="nav" class="">
