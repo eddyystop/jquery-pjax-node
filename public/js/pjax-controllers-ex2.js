@@ -93,15 +93,15 @@ PJAX.controllers['ex2/club'] = function
     });
 
     // CRAZYGLUE BINDINGS
-    var gender = new CrazyGlue('#gender'),
-      sex = new CrazyGlue('input:radio[name=sex]',
+    var sex = new CrazyGlue('input:radio[name=sex]',
         function (val) { gender.change(JSON.stringify(val) || ''); }
-      );
+      ),
+      gender = new CrazyGlue('#gender', JSON.stringify(sex.value));
 
-    var zoo = new CrazyGlue('#zoo'),
-      animal = new CrazyGlue('input:checkbox[name=animal]',
+    var animal = new CrazyGlue('input:checkbox[name=animal]',
         function (val) { zoo.change(JSON.stringify(val) || ''); }
-      );
+      ),
+      zoo = new CrazyGlue('#zoo', JSON.stringify(animal.value));
 
   } else { } // pjax being unloaded
 

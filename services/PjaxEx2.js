@@ -2,12 +2,16 @@
 
 var PJAX = {
 
+  /**
+   * Log functions =============================================================
+   */
+
   // log controller entry
   logReqInfo: function (route, req) {
-    console.log('\n\n===> http request=', req.route.method.toUpperCase(), req.url);
+    console.log('\n===> http request=', req.route.method.toUpperCase(), req.url);
     console.log('=> route handler=' + route + '; X-PJAX header=', req.header('X-PJAX'));
 
-    console.log('=> original url=', req.originalUrl);
+    //console.log('=> original url=', req.originalUrl);
     console.log('=> req.query=', req.query);
     console.log('=> req.body=', req.body);
     console.log('=> req is ' + (req.header('X-PJAX') ? '' : 'not ') +
@@ -25,7 +29,7 @@ var PJAX = {
     }
 
     console.log('\n\n<= rendering view=', view);
-    console.log('<= with res.locals=', locals);
+    //console.log('<= with res.locals=', locals);
     console.log('<= setting client URL=', url || '(not set)');
   },
 
@@ -37,42 +41,8 @@ var PJAX = {
   },
 
   /**
-   * Save detected client features.
-   * @param {object} req
-   * @param {function} fcn to extract and store detected client features.
-   *    (1) The optional req.query._widths is parsed into
-   *    req.session._widths = [ $(window).width() , $(document).width() ].
-   *    (2) The optional req.query._features contains the JSON.stringify
-   *    of jquery-pjax-toolkit's PJAX.feature.getModernizrFeatures().
-   *    The optional fcn is called with the parsed obj so it can save the
-   *    features it wants, probably in req.session.
-   *    The default is to save the parsed obj as req.session._feature,
-   *    but this may easily consume too much memory.
+   * Query string functions ====================================================
    */
-
-  extractDetectedClientFeatures: function (req, fcn) {
-
-    var widths = req.query._widths;
-    if (typeof widths === 'string') {
-      req.session._widths = widths.split(',') || [0, 0];
-    }
-
-    var features = req.query._features;
-    if (features) {
-
-      try {
-        features = JSON.parse(features);
-      } catch (e) {
-        features = { _base: ['_invalid'] };
-      }
-
-      if (fcn) {
-        fcn(features);
-      } else {
-        req.session._features = features;
-      }
-    }
-  },
 
   qs: { // source shared with PJAX.qs in jquery-pjax-toolkit
     options: { array: '[]', obj: '.' }, // configures PJAX.qs.stringifyQs
@@ -89,6 +59,7 @@ var PJAX = {
      *                  else  => a.b.c=5
      * @returns {string} the query string
      */
+
     stringifyQs: function (obj) {
       var url = '',
         options = PJAX.qs.options;
@@ -159,6 +130,37 @@ var PJAX = {
   },
 
   /**
+   * URL creation functions ====================================================
+   */
+
+  /**
+   * Convert path and object into a URL with a query string.
+   * @param {string} path may contain query string e.g. /ex1/club?region=r1
+   * @param {object} state
+   * @return {string} URL
+   */
+
+  getUrlFromState: function (path, state) { // todo used by appEx1, not appEx2
+    var qs = PJAX.stringifyParamsState(state);
+
+    if (qs) { qs = (path.indexOf('?') === -1 ? '?' : '&') + qs; }
+
+    return path + qs;
+  },
+
+  stringifyParamsState: function (state) { // todo used by appEx1, not in appEx2
+    var obj = {},
+      names = Object.getOwnPropertyNames(state).sort(); // predicable name order
+
+    names.forEach(function (name) {
+      var value = state[name];
+      if (typeof value !== 'undefined') { obj[name] = value; }
+    });
+
+    return PJAX.qs.stringifyQs(obj);
+  },
+
+  /**
    * Convert path and variable names into a URL with a query string.
    * @param {object} req
    * @param {object} res
@@ -222,6 +224,48 @@ var PJAX = {
   },
 
   /**
+   * Utility functions =========================================================
+   */
+
+  /**
+   * Save detected client features.
+   * @param {object} req
+   * @param {function} fcn to extract and store detected client features.
+   *    (1) The optional req.query._widths is parsed into
+   *    req.session._widths = [ $(window).width() , $(document).width() ].
+   *    (2) The optional req.query._features contains the JSON.stringify
+   *    of jquery-pjax-toolkit's PJAX.feature.getModernizrFeatures().
+   *    The optional fcn is called with the parsed obj so it can save the
+   *    features it wants, probably in req.session.
+   *    The default is to save the parsed obj as req.session._feature,
+   *    but this may easily consume too much memory.
+   */
+
+  extractDetectedClientFeatures: function (req, fcn) {
+
+    var widths = req.query._widths;
+    if (typeof widths === 'string') {
+      req.session._widths = widths.split(',') || [0, 0];
+    }
+
+    var features = req.query._features;
+    if (features) {
+
+      try {
+        features = JSON.parse(features);
+      } catch (e) {
+        features = { _base: ['_invalid'] };
+      }
+
+      if (fcn) {
+        fcn(features);
+      } else {
+        req.session._features = features;
+      }
+    }
+  },
+
+  /**
    * Coerce an object's properties to be arrays.
    * @param {object} obj. obj[prop] may be MODIFIED BY THIS CALL
    * @param {string} arguments are the properties in obj
@@ -237,6 +281,42 @@ var PJAX = {
         obj[prop] = [];
       } else if (Object.prototype.toString.call(value) !== '[object Array]') {
         obj[prop] = [value];
+      }
+    }
+  },
+
+  /**
+   * Template helper functions
+   */
+
+  template: {
+
+    /**
+     * Convenience method
+     */
+
+    _getSelected: function (state, value) {
+      return PJAX.template._getChecked(state, value, 'selected');
+    },
+
+    /**
+     * Helper returns checked or selected if appropriate
+     * @param {*} state. The value being compared. String or array.
+     * @param {string} value compared to.
+     * @param {string} attr to return if value is/is-in state. Default 'checked'.
+     * @returns {string} ' ' + attr, or ''
+     *
+     * The comparison coerces 'state' (if its a string) and 'value' to strings,
+     * since string state values may have been silently coerced to numeric.
+     */
+
+    _getChecked: function (state, value, attr) {
+      if (typeof attr === 'undefined') { attr = 'checked'; }
+
+      if (typeof state === 'string') {
+        return (state + '') === (value + '') ? ' ' + attr : '';
+      } else {
+        return state.indexOf(value + '') !== -1 ? ' ' + attr : '';
       }
     }
   }
